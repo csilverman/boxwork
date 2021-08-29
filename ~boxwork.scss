@@ -1,0 +1,336 @@
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+/*  Need to figure out how to integrate
+    with Vassar bootstrap theme
+*/
+
+$main-content__maxwidth: 38em !default;
+$boxwork__padding: 0 1em 1.4em 2em 2.4em !default;
+$boxwork__margin: 0 1em 1.4em 2em 2.4em !default;
+$boxwork__max-width: 40em 44em 50em 60em !default;
+$boxwork__grid-gap: 0 1em 1.4em 2em 2.4em !default;
+$boxwork__outdents: 1em 2em 3em !default;
+$boxwork__outdents-pct: 30 50 100 !default;
+
+$boxwork__breakpoints: (
+  sm: 40em,
+  md: 50em,
+  lg: 60em
+) !default;
+
+$boxwork__inner-widths: (
+  third: 33%,
+  half: 50%,
+  lg: 60em
+) !default;
+
+$boxwork__max-cols: 4 !default;
+
+$boxwork__inner-container: '.group-inner' !default;
+
+/// breakpoints()
+///
+/// Rem output with px fallback.
+///
+/// @param {string} $prop - the CSS property (padding, margin)
+/// @param {string} $prefix - the prefix for the class. Typically the same as the property, although I'm allowing customization of this in case anyone wants to set this to something abbreviated: "p" for padding or something.
+/// @output `font-size` with fallback
+///
+/// @example scss - Set rem font-size to `.foo`
+///   .foo {
+///       @include font-size(1.2);
+///   }
+@mixin breakpoints(
+  $prop,
+  $prefix,
+  $designator,
+  $value,
+  $directional: false,
+  $child: false
+) {
+  @each $breakpoint, $width in $boxwork__breakpoints {
+    @media only screen and (min-width: #{$width}) {
+      .#{$prefix}-#{$designator}\@#{$breakpoint} {
+        #{$prop}: var(--#{$prefix}-#{$designator});
+      }
+      @if $directional == true {
+        @include directions(
+          #{$prefix}-#{$designator}\@#{$breakpoint},
+          $prop,
+          var(--#{$prefix}-#{$designator})
+        );
+      }
+    }
+  }
+}
+
+
+/// cols()
+///
+/// Creates a set of utility classes for specifying the number of columns in a responsive grid. Note that this is *only* for specifying a series of equal-width columns; nothing fancy.
+///
+/// @param {number} $max-cols - a list of numbers that indicates the maximum number of columns to generate utility classes for. So specifying 4 would generate utility classes that allow one, two, three, and four columns in a container. 
+/// @param {string} $inner - if the columns should also be applied to a child element (say, you want to apply a class to .container, but have .inner-container get the layout), specify the child element's selector here.
+
+@mixin cols($max-cols, $inner: false) {
+
+  @for $item from 1 through $max-cols {
+    .cols-#{$item} {
+      grid-template-columns: repeat(#{$item}, 1fr);
+    }
+    @each $breakpoint, $width in $boxwork__breakpoints {
+      @media only screen and (min-width: #{$width}) {
+        .cols-#{$item}\@#{$breakpoint} {
+          grid-template-columns: repeat(#{$item}, 1fr);
+        }
+        @if $inner != false {
+          .cols-inner-#{$item}\@#{$breakpoint} #{$inner} {
+            grid-template-columns: repeat(#{$item}, 1fr);
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin inner-widths($widths) {
+
+  :root {
+    @each $item, $value in $widths {
+      --w-#{$item}: #{$value};
+    }
+  }
+  @each $item, $value in $widths {
+    .w-#{$item} {
+      --current-width: var(--w-#{$item});
+      width: var(--w-#{$item});
+    }
+    @include breakpoints("width", "w", #{$item}, #{$value});
+  }
+}
+
+@mixin boxwork__makeRules($list, $prop, $prefix, $directional: false, $child: false) {
+  :root {
+    //  For some classes, like padding, we'll want a padding-0 class to
+    //  remove all padding. But there are others, like max-width, where
+    //  having a mw-0 class really doesn't make sense.
+
+    //  I think -0 should only be used in cases where styling is being
+    //  completely removed; you wouldn't want a font-size-0 class that
+    //  represents the largest font-size (think how Bootstrap's utility class
+    //  sizes go from 1 through 6, in descending order).
+
+    //  So I'm handling it this way: -0 classes are only generated if a list
+    //  begins with 0. Otherwise, the first generated class will always be
+    //  a XXX-1.
+
+    $i: 1;
+    @if nth($list, 1) == 0 {
+      $i: 0;
+    }
+
+    @each $item in $list {
+      --#{$prefix}-#{$i}: #{$item};
+      $i: $i + 1;
+    }
+  }
+
+  $i: 1;
+  @if nth($list, 1) == 0 {
+    $i: 0;
+  }
+
+  @each $item in $list {
+    .#{$prefix}-#{$i} {
+      --current-#{$prop}: var(--#{$prefix}-#{$i});
+      #{$prop}: var(--#{$prefix}-#{$i});
+    }
+
+    @if $directional == true {
+      @include directions(#{$prefix}-#{$i}, $prop, var(--#{$prefix}-#{$i}));
+    }
+
+    @if $child != false {
+      .#{$prefix}-inner-#{$i} #{$child} {
+        #{$prop}: var(--#{$prefix}-#{$i});
+      }
+      @include breakpoints($prop, #{$prefix}, $i, $item, $directional);
+    }
+
+    @include breakpoints($prop, $prefix, $i, $item, $directional);
+
+    $i: $i + 1;
+  }
+}
+
+@mixin directions($selector, $prop, $value) {
+  .t-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-top: #{$value};
+  }
+  .r-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-right: #{$value};
+  }
+  .b-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-bottom: #{$value};
+  }
+  .l-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-left: #{$value};
+  }
+  .x-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-left: #{$value};
+    #{$prop}-right: #{$value};
+  }
+  .y-#{$selector} {
+      --current-#{$prop}: #{$value};
+    #{$prop}-top: #{$value};
+    #{$prop}-bottom: #{$value};
+  }
+}
+
+@mixin breakout($width: 100vw, $but-only-after: 0) {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  //	width: $width !important;
+  //  width: var(--w) !important;
+  transform: translateX(calc(50vw - 50%));
+  max-width: 100vw;
+}
+
+
+
+@include inner-widths($boxwork__inner-widths);
+
+@include boxwork__makeRules(
+  $boxwork__max-width,
+  "max-width",
+  "mw",
+  false,
+  $boxwork__inner-container
+);
+
+@include boxwork__makeRules(
+  $boxwork__padding,
+  "padding",
+  "padding",
+  true,
+  $boxwork__inner-container
+);
+
+@include boxwork__makeRules(
+  $boxwork__margin,
+  "margin",
+  "margin",
+  true,
+  $boxwork__inner-container
+);
+
+@include boxwork__makeRules(
+  $boxwork__grid-gap,
+  "gap",
+  "gap",
+  false,
+  $boxwork__inner-container
+);
+
+@include cols($boxwork__max-cols, $boxwork__inner-container);
+
+body {
+  max-width: $main-content__maxwidth;
+  margin: 0 auto;
+  border: 1px solid #f0a;
+}
+.breakout {
+  @include breakout();
+}
+.group {
+  background: #eee;
+}
+.group-inner {
+  border: 1px solid #f00;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.grid {
+  display: grid;
+  border: 1px solid #00f;
+}
+
+/*
+@mixin shift($map:(item: 1)) {
+	$defaults: (
+		direction: right,
+		distance: 1em,
+		fill-mode: forwards,
+		duration: 2s,
+		delay: 0,
+	);
+
+	$delay: has-key($map, $defaults, delay);
+	$direction: has-key($map, $defaults, direction);
+	$distance: has-key($map, $defaults, distance);
+	$fill-mode: has-key($map, $defaults, fill-mode);
+	$duration: has-key($map, $defaults, duration);
+*/
+
+// This should be a devblog post
+// fluid marginalia
+.outdent {
+  background: #eee;
+  float: right;
+
+  $width: var(--current-width, 50%);
+  $margin: var(--current-margin, 0em); // note that this needs to be a specific unit
+  
+  $padding: var(--current-padding);
+  
+  $outdent-distance: var(--outdent-distance, #{$width});
+
+  width: $width;
+  padding: $padding;
+  margin-left: $margin;
+  
+  // (#{$width} + #{$padding} + #{$margin})
+  
+  $max-outdent-distance: calc(#{$outdent-distance} + #{$margin});
+  // $max-indent-distance: 25%;
+  
+  @media only screen and (min-width: 40em) {
+    margin-right: max(calc(-1 * #{$max-outdent-distance}), calc(-1 * ((100vw - #{$main-content__maxwidth}) / 2)));
+    transform: translateY(var(--top-offset, 0));
+  }
+}
+
+@mixin boxwork__make-outdents() {
+  $i: 1;
+  @each $outdent in $boxwork__outdents {
+    .outdent-#{$i} {
+      --outdent-distance: #{$outdent};
+    }
+    $i: $i + 1;
+  }
+}
+
+@include boxwork__make-outdents();
+
+@mixin boxwork__make-outdents-pct() {
+  $i: 1;
+  @each $outdent in $boxwork__outdents-pct {
+    .outdent-#{$outdent}-pct {
+      --outdent-distance: calc(var(--current-width, 100%) * (0.01 * #{$outdent}));
+    }
+    $i: $i + 1;
+  }
+}
+
+@include boxwork__make-outdents-pct();
