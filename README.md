@@ -4,10 +4,9 @@ This is a collection of utility classes that
 My imagined use case is a blog or article where all the content is contained in a fixed-width, centered **main-content** element, with no sidebar elements on the left or right.
 
 Please note that this is
-- **not a grid system**. You can't build 
+- **not a grid system**. You can't build grids with this.
 
 ## Basics
-- **breakout container:** An element that expands outside the main-content element. Any element with a class of `bw-breakout` will break out of the main-content element and extend across the entire screen by default. You can adjust that width using max-width classes below. Breakout containers are good for things like pull quotes, large images, etc.
 
 ## Out of the...box
 
@@ -28,6 +27,11 @@ $boxwork__breakpoints: (
   lg: 60em
 );
 ```
+
+### Breakout container
+A breakout container is an element that expands outside the main-content element. Any element with a class of `breakout` will break out of the main-content element and extend across the entire screen by default. You can adjust that width using max-width classes below. Breakout containers are good for things like pull quotes, large images, etc.
+
+You can also specify the screen width at which an element should break out via `breakout@[breakpoint]`. So `breakout@lg` would only apply the breakout at a large screen size.
 
 
 ### Padding
