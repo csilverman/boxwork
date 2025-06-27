@@ -5,6 +5,7 @@ My imagined use case is a blog or article where all the content is contained in 
 
 Please note that this is
 - **not a grid system**. You can't build grids with this.
+- **kicks out a lot of media queries**. I may try to mitigate that at some point, but for now, you'd be best using a PostCSS plugin to consolidate your media queries.
 
 ## Basics
 
